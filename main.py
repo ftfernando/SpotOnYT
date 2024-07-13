@@ -102,12 +102,14 @@ print(f"Músicas não encontradas foram salvas em 'not_found_tracks.csv'.")
 
 
 # Futuramente irei adicionar funções de atualização
-# ***YTMusic.add_playlist_items (playlistId: str, videoIds: List[str] | None = None, source_playlist: str | None = None, duplicates: bool = False)
-# ***- duplicates – false
+# *** YTMusic.add_playlist_items (playlistId: str, videoIds: List[str] | None = None, source_playlist: str | None = None, duplicates: bool = False)
+# *** - duplicates – false
 #
 #
-# Futuramente pretendo adicionar mais interações
-# Verificar se já existe playlist de mesmo nome - função de delete? YTMusic.delete_playlist
+# Futuramente pretendo adicionar mais interações:
+# Tratamento de Erros
+# Verificação de Playlists Existentes
 # Songs/Playlists info
-# Podcasts - Verificar disponnibilidade no youtube
-# Front-end simplificado
+# Podcasts - Verificar disponibilidade no youtube
+# Front-end da aplicação
+# Feedback de Progresso
