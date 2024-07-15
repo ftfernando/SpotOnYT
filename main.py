@@ -50,7 +50,21 @@ playlist_id = input("Digite o Link/ID da playlist do Spotify: ")
 # Recuperar informações da playlist
 playlist = sp.playlist(playlist_id)
 playlist_name = playlist['name']
-playlist_tracks = playlist['tracks']['items']
+
+# Função para recuperar todas as músicas da playlist
+def get_all_playlist_tracks(sp, playlist_id, limit=100):
+    tracks = []
+    offset = 0
+    while True:
+        response = sp.playlist_tracks(playlist_id, limit=limit, offset=offset)
+        tracks.extend(response['items'])
+        if len(response['items']) < limit:
+            break
+        offset += limit
+    return tracks
+
+# Recuperar todas as músicas da playlist
+playlist_tracks = get_all_playlist_tracks(sp, playlist_id)
 
 # Armazenar os dados da playlist do Spotify
 tracks = []
@@ -77,6 +91,17 @@ with open('playlist_data.json', 'r', encoding='utf-8') as f:
 # Criar uma playlist no YTMusic
 yt_playlist_id = ytmusic.create_playlist(yt_playlist_name, f'Created by App Spot on YT - by Fernando Thompson | Playlist: {playlist_name}', 'PUBLIC')
 
+
+# Tentativa de função para correção de bug => Músicas não salvas
+def save_tracks_to_csv(tracks, filename):
+    """Salva uma lista de faixas em um arquivo CSV."""
+    fieldnames = ['name', 'artist', 'album']
+    with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        for track in tracks:
+            writer.writerow(track)
+
 # músicas não encontradas
 not_found_tracks = []
 
@@ -89,17 +114,35 @@ for track in tqdm(playlist_data['tracks'], desc="Adicionando músicas à playlis
     else:
         not_found_tracks.append(track)
 
-# Salvar músicas não encontradas em .CSV
-with open('not_found_tracks.csv', 'w', newline='') as csvfile:
-    fieldnames = ['name', 'artist', 'album']
-    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+# Obter a lista de músicas da nova playlist do YouTube Music
+yt_playlist_tracks = ytmusic.get_playlist(yt_playlist_id)['tracks']
 
-    writer.writeheader()
-    for track in not_found_tracks:
-        writer.writerow(track)
+# Criar um conjunto com os nomes das músicas adicionadas
+added_track_names = set()
+
+for track in yt_playlist_tracks:
+    track_name = track.get('title', 'Unknown Title')
+    artists = track.get('artists', [])
+    artist_name = artists[0]['name'] if artists else 'Unknown Artist'
+    added_track_names.add(f"{track_name} - {artist_name}")
+
+# Comparar e coletar músicas não adicionadas
+not_added_tracks = []
+for track in playlist_data['tracks']:
+    track_name_artist = f"{track['name']} - {track['artist']}"
+    if track_name_artist not in added_track_names:
+        not_added_tracks.append(track)
+
+# Combinar listas de músicas não encontradas e não adicionadas
+all_not_saved_tracks = not_found_tracks + not_added_tracks
+
+# Salvar todas as músicas não salvas em um único CSV
+if all_not_saved_tracks:
+    save_tracks_to_csv(all_not_saved_tracks, 'not_saved_tracks.csv')
 
 print(f"Playlist '{playlist_data['name']}' copiada para o YouTube Music com sucesso!")
-print(f"Músicas não encontradas foram salvas em 'not_found_tracks.csv'.")
+print(f"Músicas não adicionadas foram salvas em 'not_saved_tracks.csv'.")
+print(f"Link da playlist no YouTube Music: https://music.youtube.com/playlist?list={yt_playlist_id}")
 
 
 # Futuramente irei adicionar funções de atualização
