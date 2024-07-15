@@ -1,6 +1,7 @@
 from spotipy import Spotify
 from spotipy.oauth2 import SpotifyOAuth
 from ytmusicapi import YTMusic
+from tqdm import tqdm
 import json
 import csv
 import os
@@ -74,13 +75,13 @@ with open('playlist_data.json', 'r', encoding='utf-8') as f:
     playlist_data = json.load(f)
 
 # Criar uma playlist no YTMusic
-yt_playlist_id = ytmusic.create_playlist(yt_playlist_name, 'Created by App Spot on YT - by Fernando Thompson', 'UNLISTED')
+yt_playlist_id = ytmusic.create_playlist(yt_playlist_name, f'Created by App Spot on YT - by Fernando Thompson | Playlist: {playlist_name}', 'PUBLIC')
 
 # músicas não encontradas
 not_found_tracks = []
 
 # Adicionar músicas à playlist no YTMusic
-for track in playlist_data['tracks']:
+for track in tqdm(playlist_data['tracks'], desc="Adicionando músicas à playlist no YouTube Music", unit="música"):
     search_results = ytmusic.search(f"{track['name']} {track['artist']}", filter='songs')
     if search_results:
         track_id = search_results[0]['videoId']
@@ -112,4 +113,3 @@ print(f"Músicas não encontradas foram salvas em 'not_found_tracks.csv'.")
 # Songs/Playlists info
 # Podcasts - Verificar disponibilidade no youtube
 # Front-end da aplicação
-# Feedback de Progresso
