@@ -2,72 +2,75 @@ from spotipy import Spotify
 from spotipy.oauth2 import SpotifyOAuth
 from ytmusicapi import YTMusic
 from tqdm import tqdm
-import json
+import pandas as pd
 import csv
 import os
 from dotenv import load_dotenv
 
-# Instale as bibliotecas com o comando "pip install spotipy ytmusicapi python-dotenv" no terminal
+# Install the libraries with the command "pip install spotipy ytmusicapi python-dotenv" in the terminal
 
-# Autenticação no YTMusic:
-# Para criar o "oauth.json", utilize o comando "ytmusicapi oauth" no terminal e siga a orientação.
+# Authentication with YTMusic:
+# To create "oauth.json", use the command "ytmusicapi oauth" in the terminal and follow the instructions.
 ytmusic = YTMusic("oauth.json")
 
-# Carregar .env, se houver
+# Load .env file if it exists
 load_dotenv()
 
 client_id = os.getenv('SPOTIPY_CLIENT_ID')
 client_secret = os.getenv('SPOTIPY_CLIENT_SECRET')
 redirect_uri = os.getenv('SPOTIPY_REDIRECT_URI')
 
-# Solicitar novos valores do usuário se as variáveis de ambiente não estiverem definidas
+# Request new values from the user if environment variables are not set
 if not client_id or not client_secret or not redirect_uri:
-    client_id = input("Digite o Spotify Client ID: ")
-    client_secret = input("Digite o Spotify Client Secret: ")
-    redirect_uri = input("Digite o Spotify Redirect URI: ")
+    client_id = input("Enter the Spotify Client ID: ")
+    client_secret = input("Enter the Spotify Client Secret: ")
+    redirect_uri = input("Enter the Spotify Redirect URI: ")
 
-    # Criar ou atualizar o .env com os novos valores
+    # Create or update the .env file with new values
     with open('.env', 'w') as f:
         f.write(f"SPOTIPY_CLIENT_ID={client_id}\n")
         f.write(f"SPOTIPY_CLIENT_SECRET={client_secret}\n")
         f.write(f"SPOTIPY_REDIRECT_URI={redirect_uri}\n")
-        print("Arquivo .env criado com sucesso.")
+        print("Successfully created .env file.")
 
 else:
     print(f"Client ID: {client_id}")
     print(f"Client Secret: {client_secret}")
     print(f"Redirect URI: {redirect_uri}")
 
-# Autenticar credenciais
+
+# Authenticate credentials
 sp = Spotify(auth_manager=SpotifyOAuth(client_id=client_id,
                                        client_secret=client_secret,
                                        redirect_uri=redirect_uri,
                                        scope='playlist-read-private'))
 
-# Solicitar o ID da playlist do Spotify
-playlist_id = input("Digite o Link/ID da playlist do Spotify: ")
+# Request the Spotify playlist ID
+playlist_id = input("Enter the Spotify playlist link/ID: ")
 
-# Recuperar informações da playlist
+# Retrieve playlist information
 playlist = sp.playlist(playlist_id)
 playlist_name = playlist['name']
 
-# Função para recuperar todas as músicas da playlist
-def get_all_playlist_tracks(sp, playlist_id, limit=100):
+
+# Function to retrieve all tracks from the playlist
+def get_all_playlist_tracks(spotify, internal_playlist_id, limit=100):
     tracks = []
     offset = 0
     while True:
-        response = sp.playlist_tracks(playlist_id, limit=limit, offset=offset)
+        response = spotify.playlist_tracks(internal_playlist_id, limit=limit, offset=offset)
         tracks.extend(response['items'])
         if len(response['items']) < limit:
             break
         offset += limit
     return tracks
 
-# Recuperar todas as músicas da playlist
+
+# Retrieve all tracks from the playlist
 playlist_tracks = get_all_playlist_tracks(sp, playlist_id)
 
-# Armazenar os dados da playlist do Spotify
-tracks = []
+# Store the Spotify playlist data
+spotify_tracks = []
 for item in playlist_tracks:
     track = item['track']
     track_data = {
@@ -75,84 +78,83 @@ for item in playlist_tracks:
         'artist': track['artists'][0]['name'],
         'album': track['album']['name']
     }
-    tracks.append(track_data)
+    spotify_tracks.append(track_data)
 
-# Armazenar os dados da playlist em um JSON
-with open('playlist_data.json', 'w', encoding='utf-8') as f:
-    json.dump({'name': playlist_name, 'tracks': tracks}, f, ensure_ascii=False, indent=4)
+# Request the name for the new playlist
+yt_playlist_name = input("Enter the name of the new playlist on YouTube Music: ")
 
-# Solicitar o nome da nova playlist
-yt_playlist_name = input("Digite o nome da nova playlist no YouTube Music: ")
+# Create a playlist on YTMusic
+yt_playlist_id = ytmusic.create_playlist(yt_playlist_name, f'Created by App | Spot on YT - by Fernando Thompson | Spotify Playlist: {playlist_name}', 'PUBLIC')
 
-# Carregar os dados da playlist do JSON
-with open('playlist_data.json', 'r', encoding='utf-8') as f:
-    playlist_data = json.load(f)
+# Add tracks to the playlist on YTMusic
+for track in tqdm(spotify_tracks, desc="Adding tracks to the playlist on YouTube Music", unit="track"):
+    search_results = ytmusic.search(f"{track['name']} {track['artist']}", filter='songs')
+    if not search_results:
+        print(f"No search results for {track['name']} - {track['artist']}")
+        continue
 
-# Criar uma playlist no YTMusic
-yt_playlist_id = ytmusic.create_playlist(yt_playlist_name, f'Created by App Spot on YT - by Fernando Thompson | Playlist: {playlist_name}', 'PUBLIC')
+    track_id = search_results[0]['videoId']
+    try:
+        ytmusic.add_playlist_items(yt_playlist_id, [track_id])
+    except Exception as e:
+        print(f"Error adding {track['name']} - {track['artist']}: {e}")
+
+# Get information from the new playlist on YouTube Music
+yt_playlist_tracks = ytmusic.get_playlist(yt_playlist_id)['tracks']
+
+# Store the YouTube Music playlist data
+yt_tracks = []
+for item in yt_playlist_tracks:
+    track_data = {
+        'name': item['title'],
+        'artist': item['artists'][0]['name'],
+        'album': item['album']['name'] if 'album' in item else 'Unknown Album'
+    }
+    yt_tracks.append(track_data)
 
 
-# Tentativa de função para correção de bug => Músicas não salvas
+# Function: save tracks not added to a CSV file
 def save_tracks_to_csv(tracks, filename):
-    """Salva uma lista de faixas em um arquivo CSV."""
     fieldnames = ['name', 'artist', 'album']
     with open(filename, 'w', newline='', encoding='utf-8') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        for track in tracks:
-            writer.writerow(track)
-
-# músicas não encontradas
-not_found_tracks = []
-
-# Adicionar músicas à playlist no YTMusic
-for track in tqdm(playlist_data['tracks'], desc="Adicionando músicas à playlist no YouTube Music", unit="música"):
-    search_results = ytmusic.search(f"{track['name']} {track['artist']}", filter='songs')
-    if search_results:
-        track_id = search_results[0]['videoId']
-        ytmusic.add_playlist_items(yt_playlist_id, [track_id])
-    else:
-        not_found_tracks.append(track)
-
-# Obter a lista de músicas da nova playlist do YouTube Music
-yt_playlist_tracks = ytmusic.get_playlist(yt_playlist_id)['tracks']
-
-# Criar um conjunto com os nomes das músicas adicionadas
-added_track_names = set()
-
-for track in yt_playlist_tracks:
-    track_name = track.get('title', 'Unknown Title')
-    artists = track.get('artists', [])
-    artist_name = artists[0]['name'] if artists else 'Unknown Artist'
-    added_track_names.add(f"{track_name} - {artist_name}")
-
-# Comparar e coletar músicas não adicionadas
-not_added_tracks = []
-for track in playlist_data['tracks']:
-    track_name_artist = f"{track['name']} - {track['artist']}"
-    if track_name_artist not in added_track_names:
-        not_added_tracks.append(track)
-
-# Combinar listas de músicas não encontradas e não adicionadas
-all_not_saved_tracks = not_found_tracks + not_added_tracks
-
-# Salvar todas as músicas não salvas em um único CSV
-if all_not_saved_tracks:
-    save_tracks_to_csv(all_not_saved_tracks, 'not_saved_tracks.csv')
-
-print(f"Playlist '{playlist_data['name']}' copiada para o YouTube Music com sucesso!")
-print(f"Músicas não adicionadas foram salvas em 'not_saved_tracks.csv'.")
-print(f"Link da playlist no YouTube Music: https://music.youtube.com/playlist?list={yt_playlist_id}")
+        writer.writerows(tracks)
 
 
-# Futuramente irei adicionar funções de atualização
+save_tracks_to_csv(spotify_tracks, 'spotify_tracks.csv')
+save_tracks_to_csv(yt_tracks, 'yt_tracks.csv')
+
+
+# Load CSV files into dataframes
+spotify_df = pd.read_csv('spotify_tracks.csv')
+yt_df = pd.read_csv('yt_tracks.csv')
+
+# Extract only the 'name' column (or the corresponding column name)
+spotify_names = spotify_df['name']
+yt_names = yt_df['name']
+
+# Find tracks that are in Spotify but not in YouTube Music
+not_in_yt = spotify_df[~spotify_df['name'].isin(yt_names)].drop_duplicates()
+
+
+# Save the result to a new CSV file
+not_in_yt.to_csv('not_added_tracks.csv', index=False)
+
+
+print(f"Playlist '{playlist_name}' successfully copied to YouTube Music!")
+print(f"Tracks not added have been saved to 'not_added_tracks.csv'.")
+print(f"YouTube Music playlist link: https://music.youtube.com/playlist?list={yt_playlist_id}")
+
+
+# In the future, I will add update functions
 # *** YTMusic.add_playlist_items (playlistId: str, videoIds: List[str] | None = None, source_playlist: str | None = None, duplicates: bool = False)
 # *** - duplicates – false
 #
 #
-# Futuramente pretendo adicionar mais interações:
-# Tratamento de Erros
-# Verificação de Playlists Existentes
+# In the future, I plan to add more interactions:
+# Error Handling
+# Check for Existing Playlists
 # Songs/Playlists info
-# Podcasts - Verificar disponibilidade no youtube
-# Front-end da aplicação
+# Podcasts - Check availability on YouTube
+# Front-end of the application
