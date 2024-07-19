@@ -24,7 +24,7 @@ Caso queiram utilizar o código, seguem algumas instruções:
 Para configurar o ambiente e instalar as bibliotecas necessárias, execute o seguinte comando no terminal:
 
 ```
-pip install spotipy ytmusicapi python-dotenv
+pip install spotipy ytmusicapi python-dotenv pandas
 ```
 
 
