@@ -1,8 +1,77 @@
-<link rel="stylesheet" href="path/to/font-awesome/css/font-awesome.min.css">
+<h1 align="center"> <a href="#english-version">Documentation</a> | <a href="#versao-em-portugues">Documentação</a> </h1>
 
+## English Version
+<a id="english-version"></a>
 
+![Captura de tela Youtube](https://github.com/user-attachments/assets/7ea3c74c-5e53-4436-83fe-ba519b0dbc61)
 
-![Captura de tela 2024-07-13 012859](https://github.com/user-attachments/assets/7ea3c74c-5e53-4436-83fe-ba519b0dbc61)
+# Spot on YT App - Spotify to YouTube Music Playlist Transfer
+
+This application was born out of a personal need: as an active user of both Spotify and YouTube Music, I realized that transferring playlists between these platforms was a tedious and often frustrating process.
+So, I decided to combine the useful with the pleasant, creating a practical and efficient solution that allows me to move my music from one platform to the other without wasting time (except for the hours I spent coding, haha).
+
+Moreover, developing this tool was both a fun and challenging experience since it was the first project I created from scratch by myself.
+So far, I am satisfied with my first Python application, but I plan to refine the code and implement additional features in the future.
+
+If you want to use the code, here are some instructions:
+
+# Setting Up the Environment
+
+### Installing Libraries ###
+
+To set up the environment and install the necessary libraries, run the following command in the terminal:
+
+```
+pip install spotipy ytmusicapi python-dotenv pandas
+```
+
+### Authenticating with YTMusic ###
+
+To authenticate your application with YTMusic, run the following command in the terminal and follow the instructions:
+```
+ytmusicapi oauth
+```
+This will open a browser where you can log in to your Google account and grant the necessary permissions for the YTMusic API.
+
+### Obtaining Spotify API Credentials ###
+
+To obtain Spotify API credentials, follow the steps below:
+
+<ol class="lista-ordenada">
+    <li>Go to the <a href="https://developer.spotify.com/dashboard/">Spotify Developer Dashboard</a>.</li>
+    <li>Log in to your Spotify account (or create one if necessary).</li>
+    <li>Create a new app by clicking on "Create an App".</li>
+    <li>Fill in the necessary app details, such as name, description, and redirect URL.</li>
+    <li>After creating the app, you will find the Client ID and Client Secret, which will be required by the application.</li>
+</ol>
+
+### Final Considerations ###
+
+I imagine some instructions might be basic, but as I mentioned, this was my first application, and I know I would have saved some time if I had this information at hand 😅.
+
+If you have any questions, tips, want to share experiences, or just chat, feel free to reach out to me on any of my social networks!
+
+<h3>Social Media</h3>
+<ul>
+        <li>
+            <i class="fab fa-linkedin"></i>
+            <a href="https://www.linkedin.com/in/fernandofthompson/" target="_blank">
+                LinkedIn
+            </a>
+        </li>
+        <li>
+            <i class="fab fa-instagram"></i>
+            <a href="https://www.instagram.com/f.fthompson/" target="_blank">
+                Instagram
+            </a>
+        </li>
+</ul>
+
+---
+<a id="versao-em-portugues"></a>
+## Versão em Português
+
+![Captura de tela Youtube](https://github.com/user-attachments/assets/7ea3c74c-5e53-4436-83fe-ba519b0dbc61)
 
 
 
